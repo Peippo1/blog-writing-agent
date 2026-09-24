@@ -1,0 +1,12 @@
+# Apply with Cloud Scheduler after replacing service URL and storing SCHEDULER_SECRET in Secret Manager.
+# 0 9 * * FRI uses Europe/London, including daylight-saving transitions.
+name: weekly-publishing-pr
+schedule: "0 9 * * FRI"
+timeZone: Europe/London
+httpTarget:
+  httpMethod: POST
+  uri: https://YOUR_CLOUD_RUN_URL/internal/scheduler/run
+  headers:
+    Content-Type: application/json
+    X-Scheduler-Secret: "RETRIEVE_FROM_SECRET_MANAGER_AT_DEPLOYMENT"
+  body: e30=
