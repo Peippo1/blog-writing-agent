@@ -66,7 +66,21 @@ Open the local ADK web UI, select the project, and provide a topic such as:
 ## File guide
 
 - `agent.py` — agent definitions, loop orchestration, state keys, and root agent.
+- `creative-agent/agents.py` — a separate StoryForge experiment that creates
+  original high-fantasy MMO regions and multi-stage questlines.
 - `README.md` — learning notes and setup instructions.
+
+### Try the creative agent
+
+From the `creative-agent` directory, run the ADK web UI:
+
+```bash
+cd creative-agent
+../.venv/bin/adk web .
+```
+
+Try a prompt such as `A storm-battered floating kingdom is losing its memories
+to a creature beneath the clouds.`
 
 ## Important ADK concepts
 
@@ -78,8 +92,64 @@ Open the local ADK web UI, select the project, and provide a topic such as:
 
 ## Limitations
 
-This repository contains only the workflow definition. It does not include a
-CLI wrapper, pinned dependency lockfile, automated evaluations, or a real
-codebase-context loader. The checker instructions record feedback in state;
-the bounded loop provides the retry budget, while production-grade stopping
-criteria would be worth adding as the next experiment.
+The original agent remains a compact learning workflow. The publishing studio
+below adds the application boundary, persistence, authentication, and release
+controls needed for a hosted workflow; it deliberately does not add autonomous
+research, fact-checking, image generation, or direct LinkedIn posting.
+
+## Publishing Studio
+
+The repository now includes a private publishing-studio foundation in `app/`
+and `web/`. It turns an article brief into an editable outline and Markdown
+draft, lets the author request reviewable text expansions, queues one approved
+article for a Friday release, opens a portfolio pull request, and produces a
+manual LinkedIn package only after the article is live.
+
+### Local development
+
+1. Create a virtual environment and install the backend dependencies:
+
+   ```bash
+   python -m pip install -r requirements-dev.txt
+   ```
+
+2. Copy `.env.example` to `.env`. For local UI development only, set
+   `DEV_BYPASS_AUTH=true` and use a placeholder `PORTFOLIO_REPOSITORY`.
+   Never enable the bypass in a deployed environment.
+
+3. Start the API:
+
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+4. Start the React UI in a second terminal:
+
+   ```bash
+   cd web
+   npm install
+   npm run dev
+   ```
+
+### Production configuration
+
+- Deploy the Docker image to Cloud Run with a dedicated service account.
+- Configure Firebase Authentication and `ALLOWED_EMAILS`; production requests
+  require a verified Firebase bearer token and an allowlisted email.
+- Store `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`,
+  `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET`, and `SCHEDULER_SECRET` in
+  Secret Manager. The publisher mints a short-lived GitHub App installation
+  token per publishing action. `GITHUB_TOKEN` is a development-only fallback
+  and is rejected in production.
+- Set the `PORTFOLIO_*` values to match the private portfolio repository's
+  content path and front-matter schema. The scheduler creates a PR only; it
+  never merges or publishes directly.
+- Register the `/webhooks/github` endpoint for pull-request events and use
+  `cloud-scheduler.yaml` as the Friday 09:00 Europe/London schedule template.
+
+### Verification
+
+```bash
+python -m pytest
+cd web && npm run build
+```
